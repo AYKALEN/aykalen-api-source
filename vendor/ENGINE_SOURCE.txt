@@ -1,0 +1,6 @@
+Vendored calculation engine (unmodified).
+Repository: https://github.com/AYKALEN/aykalen-astrology-engine
+Commit: ce5ae62a543d1fdcbc3469e4a5521511aa91fd3a
+Package: astro_engine (engine_version 0.5.2)
+License: AGPL-3.0-or-later (see LICENSE and LICENSE_NOTICE.md in this directory)
+Update: copy astro_engine/ from a newer public commit and change the commit above in the same PR.

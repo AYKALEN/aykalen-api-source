@@ -1,0 +1,18 @@
+# Allowlist. Only these files go into the image, and therefore into the public source mirror
+# AYKALEN/aykalen-api-source (AGPL). Everything else stays out by default. A new file the API
+# needs at runtime must be added here AND to .github/source-mirror/expected-files.txt (CI checks).
+*
+!Dockerfile
+!.dockerignore
+!docker-compose.yml
+!requirements.txt
+!main.py
+!engine.py
+!first_map.py
+!archetype_house.py
+!app_calculation.py
+!source_manifest.py
+!data/VS_innercodex_archetypes.csv
+!vendor
+**/__pycache__
+**/*.pyc
