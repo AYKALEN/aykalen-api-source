@@ -657,3 +657,40 @@ async def post_app_calculation(req: AppCalculationRequest, request: Request):
         },
         headers={"Cache-Control": "no-store"},
     )
+
+
+@app.post("/v1/app/candidates")
+def post_app_candidates(req: AppCalculationRequest, request: Request):
+    """Archetype hypotheses for an approximate or unknown birth time (the site's scan, no gender).
+
+    The app shows them, the person picks one, and sends its birth_time to /v1/app/calculation.
+    Uses the same hourly quota per client as the calculation. Runs in FastAPI's thread pool.
+    """
+    if req.time_mode == "exact" or abs(req.lat) > app_calculation.MAX_ABS_LATITUDE:
+        logger.info("app candidates rejected: mode or latitude")
+        return _app_error(422, APP_ERROR)
+    try:
+        resolve_time_window(req.time_mode, time_bucket=req.time_bucket)  # type: ignore[arg-type]
+    except ValueError:
+        logger.info("app candidates rejected: time window")
+        return _app_error(422, APP_ERROR)
+    wait = _app_rate_limited(_app_client_key(request), time.monotonic())
+    if wait:
+        logger.info("app candidates rate-limited")
+        return _app_error(429, APP_RATE, retry_after=wait)
+    scan = FirstMapRequest(date=req.date, lat=req.lat, lng=req.lng, gender="female",  # gender unused by the scan
+                           time_mode=req.time_mode, time_bucket=req.time_bucket)
+    try:
+        candidates, time_precision = _collect_archetype_candidates(scan)
+    except HTTPException:
+        # The scan logged the reason as "first-map failed: ..." (no input values).
+        logger.info("app candidates failed: scan")
+        return _app_error(422, APP_ERROR)
+    return JSONResponse(
+        content={
+            "schema_version": "aykalen-app-candidates-1",
+            "time_precision": time_precision,
+            "candidates": [c.model_dump() for c in candidates],
+        },
+        headers={"Cache-Control": "no-store"},
+    )
